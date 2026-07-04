@@ -1,0 +1,356 @@
+/* HRMS Custom Styles for Odoo UI */
+
+.hrms-app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #F3F4F6;
+  color: #111827;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.hrms-sidebar {
+  width: 260px;
+  background-color: #1F2937;
+  color: #D1D5DB;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.hrms-brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+  border-bottom: 1px solid #374151;
+  background-color: #111827;
+}
+
+.hrms-nav-list {
+  padding: 24px 12px;
+  list-style: none;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hrms-nav-section {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9CA3AF;
+  padding: 8px 12px;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.hrms-nav-item {
+  margin: 0;
+  padding: 0;
+}
+
+.hrms-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #D1D5DB;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.hrms-nav-link:hover {
+  background-color: #374151;
+  color: #FFFFFF;
+}
+
+.hrms-nav-link.active {
+  background-color: #4F46E5;
+  color: #FFFFFF;
+}
+
+.hrms-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: #F3F4F6;
+}
+
+.hrms-topbar {
+  height: 64px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+
+.hrms-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #F3F4F6;
+  border-radius: 8px;
+  padding: 8px 16px;
+  width: 400px;
+}
+
+.hrms-search-icon {
+  color: #9CA3AF;
+  margin-right: 8px;
+}
+
+.hrms-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  color: #111827;
+  font-size: 14px;
+}
+
+.hrms-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hrms-icon-btn {
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hrms-icon-btn:hover {
+  color: #111827;
+  background-color: #F3F4F6;
+}
+
+.hrms-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.hrms-user-menu:hover {
+  background-color: #F3F4F6;
+}
+
+.hrms-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #4F46E5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.hrms-user-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+}
+
+.hrms-page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.hrms-card {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+  padding: 24px;
+}
+
+/* Stat Tiles */
+.hrms-stat-tile {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hrms-stat-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hrms-stat-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.hrms-tint-amber {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.hrms-tint-green {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.hrms-tint-indigo {
+  background-color: #E0E7FF;
+  color: #4F46E5;
+}
+
+.hrms-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hrms-stat-label {
+  font-size: 13px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.hrms-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Buttons */
+.hrms-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.hrms-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.hrms-btn-primary {
+  background-color: #4F46E5;
+  color: #FFFFFF;
+  border: 1px solid #4F46E5;
+}
+
+.hrms-btn-primary:hover:not(:disabled) {
+  background-color: #4338CA;
+  border-color: #4338CA;
+}
+
+.hrms-btn-secondary {
+  background-color: #FFFFFF;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+.hrms-btn-secondary:hover:not(:disabled) {
+  background-color: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+/* Tables */
+.hrms-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.hrms-table th {
+  text-align: left;
+  padding: 12px 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #E5E7EB;
+  background-color: #F9FAFB;
+}
+
+.hrms-table td {
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #4B5563;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.hrms-table tbody tr:hover {
+  background-color: #F9FAFB;
+}
+
+/* Badges */
+.hrms-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hrms-badge-amber {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.hrms-badge-green {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.hrms-badge-red {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+/* Sidebar Item for Dropdowns */
+.hrms-sidebar-item:hover {
+  background-color: #F3F4F6;
+}
