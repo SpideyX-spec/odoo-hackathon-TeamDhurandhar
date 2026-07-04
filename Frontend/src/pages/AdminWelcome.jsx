@@ -22,7 +22,7 @@ const AdminWelcome = () => {
   if (!user) return <div className="full-screen flex-center">Loading...</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'transparent', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <h1 style={{ fontSize: '32px', color: '#111827', margin: '0 0 8px 0', fontWeight: 'bold' }}>Welcome, {user.name}</h1>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>What would you like to do today?</p>
@@ -32,15 +32,13 @@ const AdminWelcome = () => {
         
         {/* Create Employee Account Card */}
         <div 
+          className="glass-panel"
           style={{ 
             width: '280px', 
             cursor: 'pointer', 
             textAlign: 'center', 
-            backgroundColor: '#FFFFFF', 
-            border: '1px solid #E5E7EB', 
             borderRadius: '8px', 
             padding: '32px 24px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             transition: 'transform 0.2s, box-shadow 0.2s'
           }} 
           onClick={() => navigate('/admin/dashboard', { state: { openNew: true } })}

@@ -232,6 +232,28 @@ app.put('/api/users/:id', authMiddleware, (req, res) => {
     });
 });
 
+app.put('/api/users/:id/password', authMiddleware, async (req, res) => {
+    // Only the user themselves can change their password.
+    if (req.user.id !== req.params.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+    
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        db.run(`UPDATE users SET password = ? WHERE id = ?`, [hashedPassword, req.params.id], function(err) {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            res.json({ message: 'Password updated successfully' });
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 app.get('/api/users', authMiddleware, adminMiddleware, (req, res) => {
     db.all(`SELECT id, name, email, role, job_position FROM users`, [], (err, users) => {
         if (err) return res.status(500).json({ error: 'Database error' });
@@ -241,7 +263,10 @@ app.get('/api/users', authMiddleware, adminMiddleware, (req, res) => {
 
 // --- SALARY ENDPOINTS ---
 
-app.get('/api/salary/:userId', authMiddleware, adminMiddleware, (req, res) => {
+app.get('/api/salary/:userId', authMiddleware, (req, res) => {
+    if (req.user.role !== 'Admin' && req.user.role !== 'HR' && req.user.id !== req.params.userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
     db.get(`SELECT * FROM salary_structure WHERE user_id = ?`, [req.params.userId], (err, row) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         if (!row) {
@@ -264,6 +289,50 @@ app.put('/api/salary/:userId', authMiddleware, adminMiddleware, (req, res) => {
     [wage, basic_percent, hra_percent, standard_percent, performance_percent, lta_percent, pf_percent, professional_tax, working_days, req.params.userId], function(err) {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json({ message: 'Salary structure updated' });
+    });
+});
+
+app.get('/api/salary/:userId/payslip', authMiddleware, (req, res) => {
+    // Both Admin and the user themselves can generate this
+    if (req.user.role !== 'Admin' && req.user.role !== 'HR' && req.user.id !== req.params.userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    db.get(`SELECT * FROM salary_structure WHERE user_id = ?`, [req.params.userId], (err, salary) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (!salary || !salary.wage) return res.status(400).json({ error: 'No salary structure defined' });
+
+        const currentMonthStr = new Date().toISOString().slice(0, 7); // YYYY-MM
+        db.all(`SELECT * FROM attendance WHERE user_id = ? AND date LIKE ?`, [req.params.userId, `${currentMonthStr}%`], (err, attendance) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            
+            const year = new Date().getFullYear();
+            const month = new Date().getMonth();
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let workingDays = 0;
+            for (let i = 1; i <= totalDaysInMonth; i++) {
+                const day = new Date(year, month, i).getDay();
+                if (day !== 0 && day !== 6) { // Monday=1 to Friday=5
+                    workingDays++;
+                }
+            }
+            
+            const daysPresent = attendance.length;
+            
+            // Simplified calculation
+            const perDayWage = salary.wage / workingDays;
+            const actualEarnings = perDayWage * daysPresent;
+            
+            res.json({
+                month: currentMonthStr,
+                workingDays: workingDays,
+                daysPresent: daysPresent,
+                baseWage: salary.wage,
+                actualEarnings: Math.max(0, actualEarnings).toFixed(2),
+                currency: '₹'
+            });
+        });
     });
 });
 
@@ -323,10 +392,41 @@ app.get('/api/attendance', authMiddleware, adminMiddleware, (req, res) => {
 
 app.post('/api/leave', authMiddleware, (req, res) => {
     const { start_date, end_date, type, remarks } = req.body;
-    db.run(`INSERT INTO leave_requests (user_id, start_date, end_date, type, remarks) VALUES (?, ?, ?, ?, ?)`,
-    [req.user.id, start_date, end_date, type, remarks], function(err) {
-        if (err) return res.status(500).json({ error: 'Database error' });
-        res.json({ message: 'Leave request submitted' });
+    
+    // Smart Leave Logic
+    db.get(`SELECT department FROM users WHERE id = ?`, [req.user.id], (err, userRow) => {
+        if (err || !userRow) return res.status(500).json({ error: 'Database error' });
+        const department = userRow.department;
+
+        // Count total users in same department
+        db.get(`SELECT COUNT(*) as total FROM users WHERE department = ?`, [department], (err, countRow) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            const totalInDept = countRow.total || 1;
+
+            // Check how many people in that dept are already approved for leave during these dates
+            const conflictQuery = `
+                SELECT COUNT(DISTINCT l.user_id) as on_leave 
+                FROM leave_requests l 
+                JOIN users u ON l.user_id = u.id 
+                WHERE u.department = ? 
+                AND l.status = 'Approved' 
+                AND (l.start_date <= ? AND l.end_date >= ?)
+            `;
+            db.get(conflictQuery, [department, end_date, start_date], (err, conflictRow) => {
+                if (err) return res.status(500).json({ error: 'Database error' });
+                
+                const onLeave = conflictRow.on_leave || 0;
+                // If more than 10% are on leave (or if total is small, just > 0 for demo purposes so it triggers easily)
+                const isConflict = (onLeave / totalInDept) > 0.1 || onLeave > 0; 
+                const status = isConflict ? 'Pending Conflict' : 'Approved';
+
+                db.run(`INSERT INTO leave_requests (user_id, start_date, end_date, type, remarks, status) VALUES (?, ?, ?, ?, ?, ?)`,
+                [req.user.id, start_date, end_date, type, remarks, status], function(err) {
+                    if (err) return res.status(500).json({ error: 'Database error' });
+                    res.json({ message: 'Leave request submitted', status: status });
+                });
+            });
+        });
     });
 });
 
@@ -351,7 +451,112 @@ app.put('/api/leave/:id/status', authMiddleware, adminMiddleware, (req, res) => 
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json({ message: 'Leave status updated' });
     });
-});// Serve static files from Frontend
+});
+
+// --- CHATBOT ENDPOINTS ---
+
+app.post('/api/chat', authMiddleware, (req, res) => {
+    const { message } = req.body;
+    const msgLower = message.toLowerCase();
+    
+    // Rule 1: Salary Slip
+    if (msgLower.includes('salary') || msgLower.includes('payslip') || msgLower.includes('pay slip')) {
+        return res.json({ 
+            reply: 'You can view and generate your salary slip in the Salary Info section of your profile.',
+            action: { type: 'navigate', payload: '/profile', label: 'Go to Profile' }
+        });
+    }
+
+    // Rule 2: Leave Balance
+    if (msgLower.includes('leave balance') || msgLower.includes('how many leaves')) {
+        db.get(`SELECT COUNT(*) as used FROM leave_requests WHERE user_id = ? AND status = 'Approved'`, [req.user.id], (err, row) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            const totalLeaves = 20; // Default policy
+            const used = row ? row.used : 0;
+            const remaining = totalLeaves - used;
+            return res.json({
+                reply: `You have ${remaining} leaves remaining out of your total ${totalLeaves} allowed leaves this year.`,
+                action: { type: 'navigate', payload: '/timeoff', label: 'Apply for Leave' }
+            });
+        });
+        return;
+    }
+
+    // Rule 3: Leave status
+    if (msgLower.includes('leave status') || msgLower.includes('leave approved')) {
+        db.get(`SELECT status FROM leave_requests WHERE user_id = ? ORDER BY id DESC LIMIT 1`, [req.user.id], (err, row) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            if (!row) {
+                return res.json({ reply: 'You do not have any recent leave requests.' });
+            }
+            return res.json({
+                reply: `The status of your most recent leave request is: ${row.status}`,
+                action: { type: 'navigate', payload: '/timeoff', label: 'View Leave History' }
+            });
+        });
+        return;
+    }
+
+    // Rule 4: Who is on leave (Admin/HR only)
+    if (msgLower.includes('who is on leave')) {
+        if (req.user.role !== 'Admin' && req.user.role !== 'HR') {
+            return res.json({ reply: 'I am sorry, but only HR or Admins can request this information.' });
+        }
+        const today = new Date().toISOString().split('T')[0];
+        db.all(`SELECT u.name FROM leave_requests l JOIN users u ON l.user_id = u.id WHERE l.status = 'Approved' AND l.start_date <= ? AND l.end_date >= ?`, [today, today], (err, rows) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            if (!rows || rows.length === 0) {
+                return res.json({ reply: 'No employees are currently scheduled for leave today.' });
+            }
+            const names = rows.map(r => r.name).join(', ');
+            return res.json({ reply: `The following employees are on leave today: ${names}` });
+        });
+        return;
+    }
+
+    // Default fallback
+    return res.json({
+        reply: "I'm still learning! I can help you with your salary slip, checking your leave balance, or checking your leave status. Try asking 'Where is my salary slip?'"
+    });
+});
+
+// --- LEAVE REQUESTS ENDPOINTS ---
+app.post('/api/leave', authMiddleware, (req, res) => {
+    const { start_date, end_date, type, remarks } = req.body;
+    const today = new Date().toISOString().split('T')[0];
+    if (start_date < today) {
+        return res.status(400).json({ error: 'Cannot backdate leave requests' });
+    }
+    db.run(`INSERT INTO leave_requests (user_id, start_date, end_date, type, remarks, status) VALUES (?, ?, ?, ?, ?, 'Pending')`, 
+    [req.user.id, start_date, end_date, type, remarks], function(err) {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json({ message: 'Leave request submitted successfully', id: this.lastID });
+    });
+});
+
+app.get('/api/leave', authMiddleware, (req, res) => {
+    db.all(`SELECT * FROM leave_requests WHERE user_id = ? ORDER BY start_date DESC`, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json(rows);
+    });
+});
+
+app.get('/api/admin/leaves', authMiddleware, adminMiddleware, (req, res) => {
+    db.all(`SELECT l.*, u.name FROM leave_requests l JOIN users u ON l.user_id = u.id ORDER BY l.start_date DESC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json(rows);
+    });
+});
+
+app.put('/api/admin/leaves/:id/status', authMiddleware, adminMiddleware, (req, res) => {
+    const { status } = req.body;
+    db.run(`UPDATE leave_requests SET status = ? WHERE id = ?`, [status, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json({ message: 'Leave status updated successfully' });
+    });
+});
+
+// Serve static files from Frontend
 app.use(express.static(path.join(__dirname, '../Frontend/dist')));
 app.get(/.*/, (req, res) => {
     res.sendFile(path.resolve(__dirname, '../Frontend/dist/index.html'));

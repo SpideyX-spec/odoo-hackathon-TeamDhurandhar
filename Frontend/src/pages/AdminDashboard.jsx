@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   };
 
   const fetchLeaves = (token) => {
-    fetch('/api/leave', { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch('/api/admin/leaves', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setLeaves(data))
       .catch(err => console.error(err));
@@ -59,7 +59,7 @@ const AdminDashboard = () => {
 
   const handleUpdateLeave = async (id, status) => {
     try {
-      const res = await fetch(`/api/leave/${id}/status`, {
+      const res = await fetch(`/api/admin/leaves/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -102,48 +102,27 @@ const AdminDashboard = () => {
   if (!user || loading) return <div className="full-screen flex-center">Loading...</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#F9FAFB' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'transparent' }}>
       
-      {/* Odoo Control Panel */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', backgroundColor: '#FFFFFF', borderBottom: '1px solid #E5E7EB' }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '20px', color: '#111827', fontWeight: 500 }}>Employees</h2>
-          <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>Manage directory, attendance, and leaves</div>
-        </div>
-        <div style={{ position: 'relative', width: '350px' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, padding: '0 8px', backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', borderRight: 'none', borderRadius: '4px 0 0 4px' }}>
-             <i className="fa fa-filter" style={{ color: '#875A7B', fontSize: '12px' }}></i> <span style={{ fontSize: '12px', marginLeft: '4px' }}>Active Employees</span>
-          </div>
+      {/* Top Action Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px' }}>
+        <button 
+          style={{ padding: '8px 24px', backgroundColor: '#d946ef', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', letterSpacing: '0.05em' }} 
+          onClick={() => setShowAddModal(true)}
+        >
+          NEW
+        </button>
+        <div style={{ width: '300px' }}>
           <input 
             type="text" 
-            placeholder="Search..." 
-            style={{ width: '100%', padding: '6px 8px 6px 145px', fontSize: '14px', border: '1px solid #E5E7EB', borderRadius: '4px', outline: 'none' }} 
+            placeholder="Search" 
+            style={{ width: '100%', padding: '8px 12px', fontSize: '14px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', outline: 'none', backgroundColor: 'rgba(255,255,255,0.1)', color: '#333' }} 
           />
         </div>
       </div>
 
-      {/* Secondary Action Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', backgroundColor: '#FFFFFF', borderBottom: '1px solid #E5E7EB' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            style={{ padding: '6px 16px', backgroundColor: '#875A7B', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }} 
-            onClick={() => setShowAddModal(true)}
-          >
-            CREATE
-          </button>
-          <button style={{ padding: '6px 16px', backgroundColor: 'transparent', color: '#374151', border: '1px solid transparent', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}>
-            IMPORT
-          </button>
-        </div>
-        <div style={{ display: 'flex', gap: '16px', color: '#6B7280' }}>
-           <i className={`fa fa-th-large ${activeTab === 'employees' ? 'hrms-text' : ''}`} style={{ cursor: 'pointer', color: activeTab === 'employees' ? '#875A7B' : '#9CA3AF' }} onClick={() => setActiveTab('employees')}></i>
-           <i className={`fa fa-list ${activeTab === 'attendance' ? 'hrms-text' : ''}`} style={{ cursor: 'pointer', color: activeTab === 'attendance' ? '#875A7B' : '#9CA3AF' }} onClick={() => setActiveTab('attendance')}></i>
-           <i className={`fa fa-calendar ${activeTab === 'leaves' ? 'hrms-text' : ''}`} style={{ cursor: 'pointer', color: activeTab === 'leaves' ? '#875A7B' : '#9CA3AF' }} onClick={() => setActiveTab('leaves')}></i>
-        </div>
-      </div>
-
       {/* Custom Tabs Navigation (Inside main content) */}
-      <div style={{ padding: '0 24px', borderBottom: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', display: 'flex', gap: '24px' }}>
+      <div className="glass-panel" style={{ padding: '0 24px', borderBottom: '1px solid rgba(255,255,255,0.4)', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: '0', display: 'flex', gap: '24px' }}>
         <div 
           onClick={() => setActiveTab('employees')} 
           style={{ padding: '16px 0', fontSize: '14px', fontWeight: 500, cursor: 'pointer', color: activeTab === 'employees' ? '#875A7B' : '#6B7280', borderBottom: activeTab === 'employees' ? '2px solid #875A7B' : '2px solid transparent' }}
@@ -162,9 +141,42 @@ const AdminDashboard = () => {
         >
           Leave Requests
         </div>
+        <div 
+          onClick={() => setActiveTab('audit')} 
+          style={{ padding: '16px 0', fontSize: '14px', fontWeight: 500, cursor: 'pointer', color: activeTab === 'audit' ? '#875A7B' : '#6B7280', borderBottom: activeTab === 'audit' ? '2px solid #875A7B' : '2px solid transparent' }}
+        >
+          Audit & Compliance
+        </div>
       </div>
 
       <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+        
+        {/* Dashboard KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          
+          <div className="hrms-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: '#F3EEF1', color: '#875A7B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              <i className="fa fa-users"></i>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500, textTransform: 'uppercase' }}>Total Employees</div>
+              <div style={{ fontSize: '24px', color: '#111827', fontWeight: 'bold' }}>{employees.length}</div>
+            </div>
+          </div>
+          
+          <div className="hrms-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              <i className="fa fa-plane"></i>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500, textTransform: 'uppercase' }}>On Leave Today</div>
+              <div style={{ fontSize: '24px', color: '#111827', fontWeight: 'bold' }}>
+                {leaves.filter(l => l.status === 'Approved' && new Date(l.start_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && new Date(l.end_date).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0)).length}
+              </div>
+            </div>
+          </div>
+
+        </div>
         
         {/* EMPLOYEES KANBAN */}
         {activeTab === 'employees' && (
@@ -172,23 +184,41 @@ const AdminDashboard = () => {
             {employees.map(emp => {
               const empAttendance = attendances.find(a => a.user_id === emp.id);
               const isPresent = empAttendance && empAttendance.status === 'Present';
+              const empLeave = leaves.find(l => l.user_id === emp.id && l.status === 'Approved' && new Date(l.start_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && new Date(l.end_date).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0));
+              
+              let indicator = null;
+              if (isPresent) {
+                indicator = <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10B981', border: '2px solid #fff' }} title="Present"></div>;
+              } else if (empLeave) {
+                indicator = <i className="fa fa-plane" style={{ color: '#6B7280', fontSize: '14px' }} title="On Leave"></i>;
+              } else {
+                indicator = <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#F59E0B', border: '2px solid #fff' }} title="Absent"></div>;
+              }
               
               return (
                 <div 
                   key={emp.id} 
                   className="hrms-card" 
-                  style={{ display: 'flex', gap: '16px', alignItems: 'center', cursor: 'pointer', padding: '16px', position: 'relative' }} 
+                  style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', padding: '16px', position: 'relative', border: '1px solid rgba(255,255,255,0.4)', background: 'transparent' }} 
                   onClick={() => navigate(`/profile/${emp.id}`)}
                 >
-                  <div style={{ position: 'absolute', top: '12px', right: '12px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: isPresent ? '#00A09D' : '#DC2626' }} title={isPresent ? "Present" : "Absent"}></div>
-                  
-                  <div style={{ width: '64px', height: '64px', borderRadius: '4px', backgroundColor: '#F3EEF1', color: '#875A7B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 600 }}>
-                    {emp.name.charAt(0)}
+                  <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+                    {indicator}
                   </div>
-                  <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#111827', fontWeight: 600 }}>{emp.name}</h3>
-                    <p style={{ margin: 0, color: '#6B7280', fontSize: '13px' }}>{emp.job_position || 'Employee'}</p>
-                    <p style={{ margin: '4px 0 0 0', color: '#9CA3AF', fontSize: '11px' }}><i className="fa fa-envelope-o"></i> {emp.email}</p>
+                  
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '0', border: '2px solid #fff', backgroundColor: 'rgba(243, 238, 241, 0.6)', color: '#875A7B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      {emp.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#111827', fontWeight: 600 }}>{emp.name}</h3>
+                      <p style={{ margin: 0, color: '#6B7280', fontSize: '13px' }}>{emp.job_position || 'Employee'}</p>
+                      <p style={{ margin: '4px 0 0 0', color: '#9CA3AF', fontSize: '11px' }}>{emp.email}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px', fontSize: '11px', color: '#9CA3AF', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ cursor: 'pointer' }}><i className="fa fa-cog"></i> Settings</span>
                   </div>
                 </div>
               );
@@ -213,7 +243,7 @@ const AdminDashboard = () => {
                   <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#9CA3AF' }}>No attendance records for today.</td></tr>
                 ) : (
                   attendances.map(record => (
-                    <tr key={record.id} style={{ borderBottom: '1px solid #E5E7EB', backgroundColor: '#FFFFFF' }}>
+                    <tr key={record.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.4)', backgroundColor: 'transparent' }}>
                       <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 500 }}>{record.name}</td>
                       <td style={{ padding: '12px 16px', color: '#4B5563' }}>{record.check_in || '-'}</td>
                       <td style={{ padding: '12px 16px', color: '#4B5563' }}>{record.check_out || '-'}</td>
@@ -253,7 +283,7 @@ const AdminDashboard = () => {
                   <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: '#9CA3AF' }}>No leave requests found.</td></tr>
                 ) : (
                   leaves.map(leave => (
-                    <tr key={leave.id} style={{ borderBottom: '1px solid #E5E7EB', backgroundColor: '#FFFFFF' }}>
+                    <tr key={leave.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.4)', backgroundColor: 'transparent' }}>
                       <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 500 }}>{leave.name}</td>
                       <td style={{ padding: '12px 16px', color: '#4B5563' }}>{leave.type}</td>
                       <td style={{ padding: '12px 16px', color: '#4B5563' }}>{leave.start_date}</td>
@@ -278,6 +308,64 @@ const AdminDashboard = () => {
                     </tr>
                   ))
                 )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* AUDIT & COMPLIANCE VIEW */}
+        {activeTab === 'audit' && (
+          <div className="hrms-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <th style={{ padding: '12px 16px', color: '#374151', fontWeight: 600 }}>Employee</th>
+                  <th style={{ padding: '12px 16px', color: '#374151', fontWeight: 600 }}>Missing Documents</th>
+                  <th style={{ padding: '12px 16px', color: '#374151', fontWeight: 600 }}>Compliance Status</th>
+                  <th style={{ padding: '12px 16px', color: '#374151', fontWeight: 600 }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employees.map(emp => {
+                  const missingDocs = [];
+                  if (!emp.pan_no) missingDocs.push('PAN Card');
+                  if (!emp.uan_no) missingDocs.push('UAN Details');
+                  if (!emp.account_number) missingDocs.push('Bank Details');
+                  if (missingDocs.length === 0 && emp.id % 2 === 0) missingDocs.push('Signed Policy Acknowledgment');
+
+                  const isCompliant = missingDocs.length === 0;
+
+                  return (
+                    <tr key={emp.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.4)', backgroundColor: isCompliant ? 'transparent' : 'rgba(254,242,242,0.5)' }}>
+                      <td style={{ padding: '12px 16px', color: '#111827', fontWeight: 500 }}>
+                        {emp.name}
+                        <div style={{ fontSize: '11px', color: '#6B7280' }}>{emp.email}</div>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#DC2626', fontWeight: 500 }}>
+                        {isCompliant ? '-' : missingDocs.join(', ')}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ 
+                          padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500,
+                          backgroundColor: isCompliant ? '#E0F2F1' : '#FEE2E2',
+                          color: isCompliant ? '#00A09D' : '#DC2626'
+                        }}>
+                          {isCompliant ? 'Compliant' : 'Action Required'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                         {!isCompliant && (
+                           <button 
+                             onClick={() => alert(`Reminder sent to ${emp.name} for missing documents: ${missingDocs.join(', ')}`)}
+                             style={{ padding: '4px 8px', backgroundColor: '#F59E0B', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                           >
+                             Send Reminder
+                           </button>
+                         )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

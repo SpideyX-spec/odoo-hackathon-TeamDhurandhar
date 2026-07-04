@@ -9,6 +9,7 @@ import TimeOff from './pages/TimeOff';
 import VerifyEmail from './pages/VerifyEmail';
 import AdminWelcome from './pages/AdminWelcome';
 import AppShell from './components/AppShell';
+import Chatbot from './components/Chatbot';
 import './index.css';
 
 const App = () => {
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="/timeoff" element={<TimeOff />} />
         </Route>
       </Routes>
+      <Chatbot />
     </Router>
   );
 };

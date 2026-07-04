@@ -5,16 +5,67 @@ const AppShell = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showAttendanceDropdown, setShowAttendanceDropdown] = useState(false);
+  const [attendanceStatus, setAttendanceStatus] = useState('Not Checked In');
+  const [checkInTime, setCheckInTime] = useState(null);
+  const [loadingAction, setLoadingAction] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (!userData) {
       navigate('/login');
     } else {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      fetchAttendanceStatus(parsedUser);
     }
   }, [navigate]);
+
+  const fetchAttendanceStatus = (currentUser) => {
+    fetch('/api/attendance/my', { headers: { 'Authorization': `Bearer ${currentUser.token || localStorage.getItem('token')}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const todayDate = new Date().toISOString().split('T')[0];
+          const todayRecord = data.find(d => d.date === todayDate);
+          if (todayRecord) {
+            if (todayRecord.check_out) {
+              setAttendanceStatus('Checked Out');
+            } else {
+              setAttendanceStatus('Checked In');
+              setCheckInTime(todayRecord.check_in);
+            }
+          }
+        }
+      })
+      .catch(console.error);
+  };
+
+  const handleCheckInOut = async (e) => {
+    e.stopPropagation();
+    setLoadingAction(true);
+    const endpoint = attendanceStatus === 'Checked In' ? '/api/attendance/check-out' : '/api/attendance/check-in';
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (attendanceStatus === 'Checked In') {
+          setAttendanceStatus('Checked Out');
+        } else {
+          setAttendanceStatus('Checked In');
+          setCheckInTime(data.time);
+        }
+        setShowAttendanceDropdown(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoadingAction(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -25,102 +76,76 @@ const AppShell = () => {
   if (!user) return null;
 
   const isAdmin = user.role === 'Admin' || user.role === 'HR';
-
   const isActive = (path) => location.pathname.includes(path);
 
   return (
     <div className="hrms-app-shell">
-      {/* Sidebar */}
-      <aside className="hrms-sidebar">
-        <div className="hrms-brand" onClick={() => navigate(isAdmin ? '/admin/dashboard' : '/dashboard')} style={{cursor: 'pointer'}}>
-          HRMS Odoo.x
+      {/* Top Navbar */}
+      <nav className="hrms-navbar">
+        <div className="hrms-navbar-left">
+          <img src="/odoo_logo.png" alt="Company Logo" className="hrms-logo" style={{ cursor: 'pointer' }} onClick={() => navigate(isAdmin ? '/admin/dashboard' : '/dashboard')} />
+          <ul className="hrms-nav-list">
+            <li className="hrms-nav-item">
+              <a className={`hrms-nav-link ${isActive('/employees') || (isActive('/admin/dashboard') && isAdmin) || (isActive('/dashboard') && !isAdmin) ? 'active' : ''}`} onClick={() => navigate(isAdmin ? '/admin/dashboard' : '/dashboard')}>
+                Employees
+              </a>
+            </li>
+            <li className="hrms-nav-item">
+              <a className={`hrms-nav-link ${isActive('/attendance') ? 'active' : ''}`} onClick={() => navigate('/attendance')}>
+                Attendance
+              </a>
+            </li>
+            <li className="hrms-nav-item">
+              <a className={`hrms-nav-link ${isActive('/timeoff') ? 'active' : ''}`} onClick={() => navigate('/timeoff')}>
+                Time Off
+              </a>
+            </li>
+          </ul>
         </div>
         
-        <ul className="hrms-nav-list">
-          <li className="hrms-nav-item">
-            <a className={`hrms-nav-link ${isActive('/dashboard') && !isAdmin ? 'active' : ''}`} onClick={() => navigate('/dashboard')}>
-              <i className="fa fa-home" style={{marginRight: '8px'}}></i> Dashboard
-            </a>
-          </li>
-          <li className="hrms-nav-item">
-            <a className={`hrms-nav-link ${isActive('/profile') ? 'active' : ''}`} onClick={() => navigate('/profile')}>
-              <i className="fa fa-user" style={{marginRight: '8px'}}></i> My Profile
-            </a>
-          </li>
-          <li className="hrms-nav-item">
-            <a className={`hrms-nav-link ${isActive('/attendance') ? 'active' : ''}`} onClick={() => navigate('/attendance')}>
-              <i className="fa fa-clock-o" style={{marginRight: '8px'}}></i> Attendance
-            </a>
-          </li>
-          <li className="hrms-nav-item">
-            <a className={`hrms-nav-link ${isActive('/timeoff') ? 'active' : ''}`} onClick={() => navigate('/timeoff')}>
-              <i className="fa fa-calendar" style={{marginRight: '8px'}}></i> Time Off
-            </a>
-          </li>
+        <div className="hrms-navbar-right">
+          {/* Attendance Status Dot */}
+          <div className="hrms-systray-item" onClick={() => { setShowAttendanceDropdown(!showAttendanceDropdown); setShowProfileDropdown(false); }}>
+            <div className={`status-dot ${attendanceStatus === 'Checked In' ? 'green' : 'red'}`} title={attendanceStatus}></div>
+            {showAttendanceDropdown && (
+              <div style={{ position: 'absolute', top: '140%', right: '0', backgroundColor: '#fff', color: '#111827', borderRadius: '8px', padding: '16px', minWidth: '200px', zIndex: 100, border: '1px solid #E5E7EB', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} onClick={e => e.stopPropagation()}>
+                <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '12px', fontWeight: 500 }}>
+                  {attendanceStatus === 'Checked In' ? `Since ${checkInTime || '09:00AM'}` : (attendanceStatus === 'Checked Out' ? 'Checked Out' : 'Not Checked In')}
+                </div>
+                <button 
+                  onClick={handleCheckInOut} 
+                  disabled={loadingAction || attendanceStatus === 'Checked Out'}
+                  style={{ width: '100%', padding: '10px 12px', backgroundColor: attendanceStatus === 'Checked Out' ? '#F3F4F6' : (attendanceStatus === 'Checked In' ? '#FEE2E2' : '#E0F2F1'), color: attendanceStatus === 'Checked Out' ? '#9CA3AF' : (attendanceStatus === 'Checked In' ? '#DC2626' : '#00A09D'), border: 'none', borderRadius: '6px', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, cursor: (loadingAction || attendanceStatus === 'Checked Out') ? 'not-allowed' : 'pointer' }}
+                >
+                  {attendanceStatus === 'Checked Out' ? 'Done for Today' : (attendanceStatus === 'Checked In' ? 'Check Out' : 'Check In')} <span>&rarr;</span>
+                </button>
+              </div>
+            )}
+          </div>
 
-          {isAdmin && (
-            <>
-              <div className="hrms-nav-section" style={{marginTop: '16px'}}>Admin</div>
-              <li className="hrms-nav-item">
-                <a className={`hrms-nav-link ${isActive('/admin/dashboard') ? 'active' : ''}`} onClick={() => navigate('/admin/dashboard')}>
-                  <i className="fa fa-users" style={{marginRight: '8px'}}></i> Employee Directory
-                </a>
-              </li>
-            </>
-          )}
-        </ul>
-      </aside>
+          {/* User Avatar */}
+          <div className="hrms-systray-item" onClick={() => { setShowProfileDropdown(!showProfileDropdown); setShowAttendanceDropdown(false); }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#00A09D', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            {showProfileDropdown && (
+              <div style={{ position: 'absolute', top: '140%', right: '0', backgroundColor: '#fff', color: '#111827', border: '1px solid #E5E7EB', borderRadius: '8px', minWidth: '160px', zIndex: 100, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6', cursor: 'pointer', fontSize: '14px', transition: 'background-color 0.2s' }} onClick={() => navigate('/profile')} onMouseOver={e => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseOut={e => e.currentTarget.style.backgroundColor = '#fff'}>
+                  My Profile
+                </div>
+                <div style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '14px', transition: 'background-color 0.2s', color: '#DC2626' }} onClick={handleLogout} onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEF2F2'} onMouseOut={e => e.currentTarget.style.backgroundColor = '#fff'}>
+                  Log Out
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
 
       {/* Main area */}
       <main className="hrms-main">
-        {/* Topbar */}
-        <header className="hrms-topbar">
-          <div className="hrms-search-box">
-            <i className="fa fa-search hrms-search-icon"></i>
-            <input type="text" className="hrms-search-input" placeholder="Search everywhere..." />
-          </div>
-          
-          <div className="hrms-user-actions">
-            <button className="hrms-icon-btn">
-              <i className="fa fa-bell"></i>
-            </button>
-            <div className="hrms-user-menu" onClick={() => setShowDropdown(!showDropdown)} style={{position: 'relative'}}>
-              <div className="hrms-avatar">{user.name.charAt(0).toUpperCase()}</div>
-              <span className="hrms-user-name">{user.name}</span>
-              <i className="fa fa-chevron-down" style={{fontSize: '10px', color: '#6B7280'}}></i>
-              
-              {showDropdown && (
-                <div style={{
-                  position: 'absolute', 
-                  top: '100%', 
-                  right: '0', 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #E5E7EB',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)', 
-                  borderRadius: '8px', 
-                  padding: '16px', 
-                  minWidth: '200px', 
-                  zIndex: 50,
-                  marginTop: '8px'
-                }}>
-                  <div style={{marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #E5E7EB'}}>
-                    <strong>{user.name}</strong><br/>
-                    <span style={{fontSize: '12px', color: '#6B7280'}}>{user.role}</span>
-                  </div>
-                  <div style={{ marginBottom: '12px', cursor: 'pointer', color: '#111827' }} onClick={() => navigate('/profile')}>
-                    <i className="fa fa-user" style={{marginRight: '8px'}}></i> My Profile
-                  </div>
-                  <div style={{ cursor: 'pointer', color: '#DC2626' }} onClick={handleLogout}>
-                    <i className="fa fa-sign-out" style={{marginRight: '8px'}}></i> Log Out
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
         {/* Dynamic Page Content */}
-        <div className="hrms-page-content">
+        <div className="hrms-page-content" style={{ height: '100%', overflowY: 'auto' }}>
           <Outlet />
         </div>
       </main>

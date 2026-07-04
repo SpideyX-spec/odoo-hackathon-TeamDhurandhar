@@ -49,10 +49,10 @@ const Login = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F9FAFB' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'transparent' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '24px' }}>
 
-        <div style={{ backgroundColor: '#FFFFFF', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', width: '100%', maxWidth: '400px', border: '1px solid #E5E7EB' }}>
+        <div style={{ padding: '40px', borderRadius: '12px', width: '100%', maxWidth: '400px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <h1 style={{ margin: 0, fontSize: '28px', color: '#875A7B', fontWeight: 'bold' }}>Odoo X</h1>
             <p style={{ color: '#6B7280', margin: '8px 0 0 0', fontSize: '14px' }}>Sign in to your account</p>
@@ -69,7 +69,7 @@ const Login = () => {
                 value={formData.loginId}
                 onChange={handleChange}
                 required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '4px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', outline: 'none', transition: 'border-color 0.2s' }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '4px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = '#875A7B'}
                 onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}
               />
@@ -82,7 +82,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '4px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', outline: 'none', transition: 'border-color 0.2s' }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '4px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 onFocus={(e) => e.target.style.borderColor = '#875A7B'}
                 onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}
               />
